@@ -1,10 +1,29 @@
+import re
 import sys
 import logging
 import pandas as pd
 import bioregistry
 import shortuuid
 from owlready2 import *
-from gensim.parsing import strip_non_alphanum, strip_multiple_whitespaces
+
+_RE_NONALPHA = re.compile(r"\W", re.UNICODE)
+_RE_WHITESPACE = re.compile(r"(\s)+", re.UNICODE)
+
+
+def strip_non_alphanum(s):
+    """Replace non-alphanumeric characters with spaces.
+
+    Equivalent to gensim.parsing.preprocessing.strip_non_alphanum.
+    """
+    return _RE_NONALPHA.sub(" ", s)
+
+
+def strip_multiple_whitespaces(s):
+    """Collapse repeating whitespace characters into a single space.
+
+    Equivalent to gensim.parsing.preprocessing.strip_multiple_whitespaces.
+    """
+    return _RE_WHITESPACE.sub(" ", s)
 
 
 BASE_IRI = "https://text2term.utils/"

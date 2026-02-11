@@ -29,7 +29,6 @@ dependencies = [
     "argparse~=1.4.0",
     "pandas~=2.2.3",
     "numpy~=1.26.4",
-    "gensim~=4.3.2",
     "scipy~=1.12.0",
     "scikit-learn~=1.6.1",
     "setuptools~=80.8.0",
