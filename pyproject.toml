@@ -1,6 +1,6 @@
 [project]
 name = "text2term"
-version = "4.5.0"
+version = "4.6.0"
 description = "A tool for mapping free-text descriptions of entities to ontology terms"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -8,11 +8,11 @@ license = "MIT"
 keywords = ["ontology", "metadata", "text mining", "metadata curation", "ontology mapping"]
 
 authors = [
-    { name="Rafael Goncalves", email="goncalves@stanford.edu" },
+    { name="Rafael Goncalves", email="rsgoncalves@gmx.com" },
     { name="Jason Payne", email="paynejason@gmail.com" }
 ]
 maintainers = [
-    { name="Rafael Goncalves", email="goncalves@stanford.edu" }
+    { name="Rafael Goncalves", email="rsgoncalves@gmx.com" }
 ]
 
 classifiers = [
@@ -25,25 +25,20 @@ classifiers = [
 ]
 
 dependencies = [
-    "owlready2~=0.47",
-    "argparse~=1.4.0",
-    "pandas~=2.2.3",
-    "numpy~=1.26.4",
-    "gensim~=4.3.2",
-    "scipy~=1.12.0",
-    "scikit-learn~=1.6.1",
-    "setuptools~=80.8.0",
-    "requests~=2.32.3",
-    "tqdm~=4.67.1",
-    "sparse-dot-topn~=1.1.3",
-    "bioregistry~=0.11.10",
-    "nltk~=3.9.1",
-    "rapidfuzz~=3.12.2",
-    "shortuuid~=1.0.11",
+    "bioregistry>=0.11.10",
+    "nltk>=3.9.1",
+    "owlready2>=0.47",
+    "pandas>=2.2.3",
+    "rapidfuzz>=3.12.2",
+    "requests>=2.32.3",
+    "scikit-learn>=1.6.1",
+    "shortuuid>=1.0.11",
+    "sparse-dot-topn>=1.1.3",
+    "tqdm>=4.67.1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest==8.1.1"]
+dev = ["pytest>=8.1.1"]
 
 [tool.setuptools]
 packages = ["text2term"]
@@ -53,7 +48,7 @@ include-package-data = true
 omit = ["*/__main__.py"]
 
 [build-system]
-requires = ["setuptools>=80.8", "wheel"]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project.urls]
