@@ -1,101 +1,73 @@
 <?xml version="1.0"?>
-<rdf:RDF xmlns="http://www.semanticweb.org/rafaelsg/ontologies/2025/5/untitled-ontology-18/"
-     xml:base="http://www.semanticweb.org/rafaelsg/ontologies/2025/5/untitled-ontology-18/"
-     xmlns:dc="http://purl.org/dc/elements/1.1/"
+<rdf:RDF xmlns="https://text2term.ontology/test/"
+     xml:base="https://text2term.ontology/test/"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:skos="http://www.w3.org/2004/02/skos/core#"
-     xmlns:terms="http://purl.org/dc/terms/"
      xmlns:oboInOwl="http://www.geneontology.org/formats/oboInOwl#"
      xmlns:Thesaurus="http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#">
-    <owl:Ontology rdf:about="https://text2term.ontology/test">
-        <owl:imports rdf:resource="https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl"/>
-    </owl:Ontology>
-    
 
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Annotation properties
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#P90 -->
+    <owl:Ontology rdf:about="https://text2term.ontology/test/"/>
 
     <owl:AnnotationProperty rdf:about="http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#P90"/>
-    
-
-
-    <!-- http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym -->
-
     <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"/>
-    
-
-
-    <!-- http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym -->
-
     <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"/>
-    
-
-
-    <!-- http://www.w3.org/2004/02/skos/core#definition -->
-
+    <owl:AnnotationProperty rdf:about="http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"/>
     <owl:AnnotationProperty rdf:about="http://www.w3.org/2004/02/skos/core#definition"/>
-    
 
+    <owl:ObjectProperty rdf:about="https://text2term.ontology/test/hasTopping">
+        <rdfs:label>contains topping</rdfs:label>
+    </owl:ObjectProperty>
 
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
-    // Classes
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
+    <owl:ObjectProperty rdf:about="https://text2term.ontology/test/hasLocation">
+        <rdfs:label>location</rdfs:label>
+    </owl:ObjectProperty>
 
-    
+    <owl:Class rdf:about="https://text2term.ontology/test/Pizza">
+        <rdfs:label>Pizza</rdfs:label>
+        <skos:definition>A dish made with dough and toppings</skos:definition>
+    </owl:Class>
 
+    <owl:Class rdf:about="https://text2term.ontology/test/IceCream">
+        <rdfs:label>Ice Cream</rdfs:label>
+        <owl:disjointWith rdf:resource="https://text2term.ontology/test/Pizza"/>
+    </owl:Class>
 
-    <!-- https://text2term.ontology/test/FishyPizza -->
+    <owl:Class rdf:about="https://text2term.ontology/test/CheesePizza">
+        <rdfs:subClassOf rdf:resource="https://text2term.ontology/test/Pizza"/>
+        <rdfs:label>Cheese Pizza</rdfs:label>
+        <oboInOwl:hasExactSynonym>Plain Pizza</oboInOwl:hasExactSynonym>
+    </owl:Class>
 
     <owl:Class rdf:about="https://text2term.ontology/test/FishyPizza">
-        <owl:equivalentClass>
-            <owl:Class>
-                <owl:intersectionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl#Pizza"/>
-                    <owl:Restriction>
-                        <owl:onProperty rdf:resource="https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl#hasTopping"/>
-                        <owl:someValuesFrom rdf:resource="https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl#FishTopping"/>
-                    </owl:Restriction>
-                </owl:intersectionOf>
-            </owl:Class>
-        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="https://text2term.ontology/test/Pizza"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://text2term.ontology/test/hasTopping"/>
+                <owl:someValuesFrom rdf:resource="https://text2term.ontology/test/FishTopping"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <Thesaurus:P90>pizza with fish</Thesaurus:P90>
         <oboInOwl:hasBroadSynonym>Seafood Pizza</oboInOwl:hasBroadSynonym>
         <oboInOwl:hasRelatedSynonym>Fish Pizza</oboInOwl:hasRelatedSynonym>
         <rdfs:label>Pizza that contains fish</rdfs:label>
         <skos:definition>A pizza that contains a fish ingredient</skos:definition>
     </owl:Class>
-    
 
+    <owl:Class rdf:about="https://text2term.ontology/test/FishTopping">
+        <rdfs:label>Fish Topping</rdfs:label>
+    </owl:Class>
 
-    <!-- https://text2term.ontology/test/VanillaIceCream -->
+    <owl:Class rdf:about="https://text2term.ontology/test/TomatoTopping">
+        <rdfs:label>Tomato Topping</rdfs:label>
+    </owl:Class>
 
     <owl:Class rdf:about="https://text2term.ontology/test/VanillaIceCream">
-        <rdfs:subClassOf rdf:resource="https://raw.githubusercontent.com/owlcs/pizza-ontology/refs/heads/master/pizza.owl#IceCream"/>
+        <rdfs:subClassOf rdf:resource="https://text2term.ontology/test/IceCream"/>
         <rdfs:label>Vanilla Ice Cream</rdfs:label>
         <owl:deprecated rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:deprecated>
     </owl:Class>
 </rdf:RDF>
-
-
-
-<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
-

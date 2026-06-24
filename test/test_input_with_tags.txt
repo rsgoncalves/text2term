@@ -1,4 +1,4 @@
-asthma;:;disease
-acute bronchitis;:;important,tags
-hypertension NOS;:;disease
-colon disease
+cheese pizza;:;pizza
+fish pizza;:;seafood,topping
+pizza NOS;:;unspecified
+mystery topping
