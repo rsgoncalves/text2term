@@ -1,11 +1,17 @@
 """Provides OntologyTermCollector class"""
 
-from owlready2 import *
-from text2term import onto_utils
-from text2term.term import OntologyTerm, OntologyTermType
-import time
 import logging
 import bioregistry
+from owlready2 import *
+
+from text2term import onto_utils
+from text2term.term import OntologyTerm, OntologyTermType
+
+# Matches the IRI reported by owlready2's namespace.py _load_properties() when it
+# encounters "punning" (the same IRI declared as both a property and a class/individual),
+# e.g.: "'http://purl.obolibrary.org/obo/STATO_0000416' belongs to more than one entity
+# types (cannot be both a property and a class/an individual)!"
+_PUNNING_ERROR_IRI_PATTERN = re.compile(r"^'(.+?)' belongs to more than one entity types")
 
 
 class OntologyTermCollector:
@@ -344,6 +350,30 @@ class OntologyTermCollector:
     def _load_ontology(self, ontology_iri):
         """
         Load the ontology at the specified IRI.
+
+        Some ontologies (e.g., CL, which imports STATO/OBI) contain "punned" entities--IRIs
+        that are declared as both a property and a class/individual. Owlready2 enforces OWL DL
+        and refuses to load such ontologies: internally, Ontology.load() parses the RDF/XML
+        document into the world's quadstore, then calls self._load_properties(), and--only
+        afterwards--loads imported ontologies and runs any ontology-declared Python module hooks.
+        A punning TypeError raised inside _load_properties() would normally abort load() entirely,
+        skipping those later steps.
+
+        To recover without losing those later steps, we temporarily wrap (monkey-patch) the
+        Ontology._load_properties method on the class itself for the duration of this call. The
+        wrapper calls the original implementation; if it raises the punning TypeError, the wrapper
+        strips the offending entity's triples directly from the quadstore and retries
+        _load_properties() in a loop (an ontology can have any number of punned terms, often pulled
+        in via different imports, and we keep going until they're all gone), then returns normally.
+        From load()'s perspective, _load_properties() simply succeeded, so it proceeds to load
+        imports etc. as usual. The patch is removed (restoring the original method) in a finally
+        block, regardless of outcome.
+
+        The loop has no cap on how many punned entities it will strip. The only thing it guards against
+        is the same IRI being reported again right after being stripped, which would indicate the
+        strip didn't actually take effect (a bug, or an IRI that owlready2 keeps regenerating); that
+        case raises immediately rather than looping forever.
+
         :param ontology_iri: IRI of the ontology (e.g., path of ontology document in the local file system, URL)
         :return: Ontology document
         """
@@ -352,8 +382,39 @@ class OntologyTermCollector:
         owl_link = bioregistry.get_owl_download(ontology_iri)
         if owl_link is not None:
             ontology_iri = owl_link
-        ontology = get_ontology(ontology_iri).load()
+        removed_iris = []
+
+        original_load_properties = Ontology._load_properties
+
+        def _patched_load_properties(onto_self):
+            last_punned_iri = None
+            while True:
+                try:
+                    return original_load_properties(onto_self)
+                except TypeError as err:
+                    punned_iri = _extract_punning_iri(err)
+                    if punned_iri is None:
+                        raise  # not a punning error we know how to recover from
+                    if punned_iri == last_punned_iri:
+                        self.logger.error("Stripping '%s' did not resolve its punning error; giving up "
+                                          "to avoid looping forever.", punned_iri)
+                        raise
+                    self.logger.warning("Ontology contains a punned entity (declared as both a property "
+                                        "and a class/individual): %s. Removing it and retrying.", punned_iri)
+                    _strip_punned_entity(onto_self.world, punned_iri)
+                    removed_iris.append(punned_iri)
+                    last_punned_iri = punned_iri
+
+        Ontology._load_properties = _patched_load_properties
+        try:
+            ontology = get_ontology(ontology_iri).load()
+        finally:
+            Ontology._load_properties = original_load_properties
+
         end = time.time()
+        if removed_iris:
+            self.logger.warning("Removed %i punned entit%s prior to loading: %s", len(removed_iris),
+                                "y" if len(removed_iris) == 1 else "ies", removed_iris)
         self._log_ontology_metrics(ontology)
         self.logger.info("...done (ontology loading time: %.2fs)", end - start)
         return ontology
@@ -384,6 +445,65 @@ class OntologyTermCollector:
         self.logger.debug(" Object property count: %i", len(list(ontology.object_properties())))
         self.logger.debug(" Data property count: %i", len(list(ontology.data_properties())))
         self.logger.debug(" Annotation property count: %i", len(list(ontology.annotation_properties())))
+
+
+def _extract_punning_iri(error):
+    """
+    Parse the offending IRI out of the TypeError raised by owlready2's
+    namespace.py::_load_properties() when it detects punning.
+    :param error: the TypeError raised by owlready2
+    :return: the punned entity's IRI, or None if the error message doesn't match the expected pattern
+    """
+    match = _PUNNING_ERROR_IRI_PATTERN.match(str(error))
+    return match.group(1) if match else None
+
+
+def _strip_punned_entity(world, iri):
+    """
+    Remove the given (punned) IRI from the ontology so that a subsequent retry of
+    _load_properties() no longer sees it as declared as more than one entity type.
+
+    Tries two strategies, in order:
+      1. destroy_entity() -- owlready2's public, documented API for removing an entity and all
+         its triples from the quadstore. This works here because by the time _load_properties()
+         raises, the class/individual-side triples for the punned IRI have already been parsed
+         and a Python entity object usually already exists for it (world[iri] / _get_by_storid);
+         it is only the *property*-side interpretation that fails to materialize. If such an
+         object exists, destroying it removes all of the IRI's triples (including the property
+         declaration), which is exactly what we need.
+      2. Direct deletion from the SQLite-backed quadstore (world.graph) as a fallback, in case no
+         Python object could be resolved for the IRI. This reaches into internals that are less
+         API-stable across owlready2 versions, so it is only used if strategy 1 doesn't apply.
+
+    :param world: owlready2 World (or ontology.world) whose quadstore should be modified
+    :param iri: IRI (string) of the punned entity to remove
+    """
+    entity = world[iri]  # World supports dict-like IRI lookup; returns None if no Python object exists yet
+    if entity is not None:
+        destroy_entity(entity)
+        return
+
+    # Fallback: no Python-side object could be resolved (e.g. only a bare property triple exists).
+    # Delete the IRI's triples directly from the quadstore.
+    try:
+        storid = world._abbreviate(iri, False)
+    except AttributeError as err:
+        raise RuntimeError(
+            "Could not resolve internal storage ID for IRI '%s' while trying to recover from a "
+            "punning error (destroy_entity() also found no Python object for it). owlready2's "
+            "internal API may have changed; inspect world._abbreviate() / world.graph in your "
+            "installed version." % iri) from err
+    if storid is None:
+        # Entity not found in the store under this IRI; nothing to strip.
+        return
+    try:
+        world.graph.execute("DELETE FROM quads WHERE s=? OR o=?", (storid, storid))
+        world.graph.db.commit()
+    except AttributeError as err:
+        raise RuntimeError(
+            "Could not delete triples for IRI '%s' while trying to recover from a punning error. "
+            "owlready2's internal quadstore API may have changed; inspect world.graph in your "
+            "installed version." % iri) from err
 
 
 def filter_terms(onto_terms, iris=(), excl_deprecated=False, term_type=OntologyTermType.ANY):
