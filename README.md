@@ -18,7 +18,7 @@
       <img alt="Citation" src="https://img.shields.io/badge/DOI-10.1093/database/baae119-white" />
    </a>
    <a href="https://shields.io/badges/py-pi-downloads" target="_blank">
-      <img alt="PyPI Installs" src="https://img.shields.io/pypi/dm/text2term?label=pypi%20installs&color=D3CB40">
+      <img alt="PyPI Installs" src="https://img.shields.io/pypi/dm/text2term?label=pypi%20installs&color=D3CB40&maxAge=86400">
    </a>
    <a href="https://shields.io/badges/pepy-total-downloads" target="_blank">
       <img alt="Total Downloads" src="https://img.shields.io/pepy/dt/text2term?label=downloads&color=D10000">
